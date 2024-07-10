@@ -29,10 +29,13 @@ void QuadroTreeWidget::mousePressEvent(QMouseEvent *event)
     QWidget::mousePressEvent(event);
 
     if(event->button() == Qt::LeftButton){
-        QPoint point = event->pos();
-        m_head->addItem(point);
-        this->update();
+        m_head->addPoint(event->position());
     }
+    else if(event->button() == Qt::RightButton){
+        m_head->deletePoint(event->position());
+    }
+
+    this->update();
 }
 
 void QuadroTreeWidget::paintEvent(QPaintEvent *event)
@@ -55,4 +58,9 @@ void QuadroTreeWidget::showEvent(QShowEvent *event)
         rect.adjust(0,0,-1,-1);
         m_head = std::make_unique<QuadroTreeNode>(rect);
     }
+}
+
+void QuadroTreeWidget::mouseMoveEvent(QMouseEvent *event)
+{
+    QWidget::mouseMoveEvent(event);
 }

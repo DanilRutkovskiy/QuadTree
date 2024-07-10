@@ -12,11 +12,13 @@ public:
     QuadroTreeNode(const QRectF& rect);
 
 public:
-    void addItem(QPointF newPoint);
+    void addPoint(QPointF newPoint);
+    void deletePoint(const QPointF& point, QuadroTreeNode* parent = nullptr);
     void getPoints(std::vector<QPointF>& vec) const;
     void draw(QPainter& painter) const;
 
 private:
+    void reconstruct();
 
 private:
     int m_maxPoints;

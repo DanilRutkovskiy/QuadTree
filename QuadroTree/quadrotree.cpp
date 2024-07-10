@@ -8,7 +8,7 @@ QuadroTreeNode::QuadroTreeNode(const QRectF& area): m_area{area},
     m_mid.setY((m_area.top() + m_area.bottom()) / 2);
 }
 
-void QuadroTreeNode::addItem(QPointF newPoint)
+void QuadroTreeNode::addPoint(QPointF newPoint)
 {
     if(m_points.size() == m_maxPoints){
         double width = m_area.width() / 2;
@@ -24,12 +24,12 @@ void QuadroTreeNode::addItem(QPointF newPoint)
 
         for(auto& point : m_points){
             if(point.y() < m_mid.y()){
-                if(point.x() < m_mid.x()){ m_nw->addItem(point);}
-                else{m_ne->addItem(point);}
+                if(point.x() < m_mid.x()){ m_nw->addPoint(point);}
+                else{m_ne->addPoint(point);}
             }
             else{
-                if(point.x() < m_mid.x()){m_sw->addItem(point);}
-                else{m_se->addItem(point);}
+                if(point.x() < m_mid.x()){m_sw->addPoint(point);}
+                else{m_se->addPoint(point);}
             }
         }
 
@@ -41,12 +41,39 @@ void QuadroTreeNode::addItem(QPointF newPoint)
     }
     else{
         if(newPoint.y() < m_mid.y()){
-            if(newPoint.x() < m_mid.x()){ m_nw->addItem(newPoint);}
-            else{m_ne->addItem(newPoint);}
+            if(newPoint.x() < m_mid.x()){ m_nw->addPoint(newPoint);}
+            else{m_ne->addPoint(newPoint);}
         }
         else{
-            if(newPoint.x() < m_mid.x()){m_sw->addItem(newPoint);}
-            else{m_se->addItem(newPoint);}
+            if(newPoint.x() < m_mid.x()){m_sw->addPoint(newPoint);}
+            else{m_se->addPoint(newPoint);}
+        }
+    }
+}
+
+void QuadroTreeNode::deletePoint(const QPointF& point, QuadroTreeNode* parent)
+{
+    if(m_ne != nullptr){
+        if(point.x() < m_mid.x()){
+            if(point.y() < m_mid.y()) { m_nw->deletePoint(point, this); }
+            else {m_sw->deletePoint(point, this);};
+        }
+        else{
+            if(point.y() < m_mid.y()) { m_ne->deletePoint(point, this); }
+            else {m_se->deletePoint(point, this);};
+        }
+    }
+    else{
+        for(auto it = m_points.begin(); it != m_points.end(); it++){
+            if((it->x() >= point.x() - 2) && (it->x() <= point.x() + 2)
+                && (it->y() >= point.y() - 2) && (it->y() <= point.y() +2))
+            {
+                m_points.erase(it);
+                if(parent != nullptr){
+                    parent->reconstruct();
+                }
+                break;
+            }
         }
     }
 }
@@ -68,7 +95,9 @@ void QuadroTreeNode::getPoints(std::vector<QPointF> &vec) const
 
 void QuadroTreeNode::draw(QPainter &painter) const
 {
-    painter.drawRect(m_area);
+    if(m_ne == nullptr){
+        painter.drawRect(m_area);
+    }
 
     for(const auto& point : m_points){
         painter.drawEllipse(point, 2, 2);
@@ -81,3 +110,28 @@ void QuadroTreeNode::draw(QPainter &painter) const
         m_sw->draw(painter);
     }
 }
+
+void QuadroTreeNode::reconstruct()
+{
+    if(m_ne != nullptr){
+        int totalPoints = 0;
+        totalPoints += m_nw->m_points.size();
+        totalPoints += m_ne->m_points.size();
+        totalPoints += m_sw->m_points.size();
+        totalPoints += m_se->m_points.size();
+
+        if(totalPoints <= m_maxPoints){
+            m_points.reserve(totalPoints);
+            m_points.insert(m_points.end(), m_nw->m_points.begin(), m_nw->m_points.end());
+            m_points.insert(m_points.end(), m_ne->m_points.begin(), m_ne->m_points.end());
+            m_points.insert(m_points.end(), m_sw->m_points.begin(), m_sw->m_points.end());
+            m_points.insert(m_points.end(), m_se->m_points.begin(), m_se->m_points.end());
+
+            m_nw.reset(nullptr);
+            m_ne.reset(nullptr);
+            m_se.reset(nullptr);
+            m_sw.reset(nullptr);
+        }
+    }
+}
+
